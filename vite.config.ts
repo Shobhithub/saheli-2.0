@@ -8,6 +8,8 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    // Proxy only works in development mode (vite dev)
+    // In production, use VITE_API_URL environment variable
     proxy: {
       '/api': {
         target: 'http://localhost:4000',
