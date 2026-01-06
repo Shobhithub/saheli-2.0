@@ -1,0 +1,313 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* SAHELI 2.0 Design System - Coral & Teal Theme */
+
+@layer base {
+  :root {
+    /* Core Colors - Warm Coral/Salmon Primary */
+    --background: 20 50% 98%;
+    --foreground: 0 0% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 15%;
+
+    /* Coral/Salmon Primary */
+    --primary: 6 78% 67%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Soft Coral Secondary */
+    --secondary: 15 60% 95%;
+    --secondary-foreground: 6 78% 50%;
+
+    /* Muted backgrounds */
+    --muted: 20 30% 96%;
+    --muted-foreground: 0 0% 45%;
+
+    /* Teal Accent */
+    --accent: 174 62% 47%;
+    --accent-foreground: 0 0% 100%;
+
+    /* Danger/SOS Red */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Success/Safe Green */
+    --success: 152 60% 45%;
+    --success-foreground: 0 0% 100%;
+
+    /* Warning */
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    --border: 20 20% 90%;
+    --input: 20 20% 90%;
+    --ring: 6 78% 67%;
+
+    --radius: 1rem;
+
+    /* Coral Header Background */
+    --header: 6 78% 72%;
+    --header-foreground: 0 0% 100%;
+
+    /* Sidebar - Police Dashboard */
+    --sidebar-background: 220 25% 12%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 6 78% 67%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 25% 18%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 220 20% 20%;
+    --sidebar-ring: 6 78% 67%;
+
+    /* Gradients */
+    --gradient-coral: linear-gradient(135deg, hsl(6 78% 72%) 0%, hsl(15 85% 65%) 100%);
+    --gradient-sos: linear-gradient(180deg, hsl(0 84% 60%) 0%, hsl(0 84% 50%) 100%);
+    --gradient-teal: linear-gradient(135deg, hsl(174 62% 47%) 0%, hsl(174 62% 40%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(20 30% 98%) 100%);
+
+    /* Shadows */
+    --shadow-sm: 0 2px 8px -2px hsl(0 0% 0% / 0.08);
+    --shadow-md: 0 4px 16px -4px hsl(0 0% 0% / 0.12);
+    --shadow-lg: 0 8px 32px -8px hsl(0 0% 0% / 0.16);
+    --shadow-sos: 0 8px 40px -8px hsl(0 84% 60% / 0.5);
+    --shadow-glow: 0 0 60px hsl(6 78% 67% / 0.3);
+
+    /* Animations */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .dark {
+    --background: 220 25% 8%;
+    --foreground: 0 0% 95%;
+
+    --card: 220 25% 12%;
+    --card-foreground: 0 0% 95%;
+
+    --popover: 220 25% 12%;
+    --popover-foreground: 0 0% 95%;
+
+    --primary: 6 78% 62%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 25% 18%;
+    --secondary-foreground: 0 0% 90%;
+
+    --muted: 220 20% 18%;
+    --muted-foreground: 0 0% 65%;
+
+    --accent: 174 62% 47%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 75% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 152 55% 45%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 85% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    --border: 220 20% 20%;
+    --input: 220 20% 20%;
+    --ring: 6 78% 62%;
+
+    --header: 220 25% 15%;
+    --header-foreground: 0 0% 95%;
+
+    --sidebar-background: 220 25% 8%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 6 78% 62%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 25% 15%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 220 20% 18%;
+    --sidebar-ring: 6 78% 62%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+}
+
+@layer utilities {
+  .text-gradient-coral {
+    background: var(--gradient-coral);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .bg-gradient-coral {
+    background: var(--gradient-coral);
+  }
+
+  .bg-gradient-sos {
+    background: var(--gradient-sos);
+  }
+
+  .bg-gradient-teal {
+    background: var(--gradient-teal);
+  }
+
+  .shadow-sos {
+    box-shadow: var(--shadow-sos);
+  }
+
+  .shadow-glow {
+    box-shadow: var(--shadow-glow);
+  }
+
+  /* SOS Button Pulse Animation */
+  @keyframes sos-pulse {
+    0%, 100% {
+      transform: scale(1);
+      box-shadow: 0 0 0 0 hsl(0 84% 60% / 0.7);
+    }
+    50% {
+      transform: scale(1.05);
+      box-shadow: 0 0 0 20px hsl(0 84% 60% / 0);
+    }
+  }
+
+  .animate-sos-pulse {
+    animation: sos-pulse 2s ease-in-out infinite;
+  }
+
+  /* Alert Flash Animation */
+  @keyframes alert-flash {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.6;
+    }
+  }
+
+  .animate-alert-flash {
+    animation: alert-flash 1s ease-in-out infinite;
+  }
+
+  /* Slide In Animation */
+  @keyframes slide-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-slide-in-up {
+    animation: slide-in-up 0.4s ease-out;
+  }
+
+  /* Progress Bar Animation */
+  @keyframes progress-indeterminate {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  .animate-progress {
+    animation: progress-indeterminate 1.5s ease-in-out infinite;
+  }
+
+  /* Ripple Effect */
+  @keyframes ripple {
+    0% {
+      transform: scale(1);
+      opacity: 0.4;
+    }
+    100% {
+      transform: scale(2.5);
+      opacity: 0;
+    }
+  }
+
+  .animate-ripple {
+    animation: ripple 1.5s ease-out infinite;
+  }
+
+  /* Fade In Animations */
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes fade-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.8s ease-out forwards;
+  }
+
+  .animate-fade-in-up {
+    animation: fade-in-up 0.8s ease-out forwards;
+  }
+
+  .animate-fade-in-delayed {
+    opacity: 0;
+    animation: fade-in 0.8s ease-out 0.3s forwards;
+  }
+
+  .animate-fade-in-delayed-2 {
+    opacity: 0;
+    animation: fade-in-up 0.8s ease-out 0.6s forwards;
+  }
+
+  /* Coral color utility */
+  .text-coral-500 {
+    color: hsl(6 78% 67%);
+  }
+
+  .bg-coral-500 {
+    background-color: hsl(6 78% 67%);
+  }
+}
+
+/* Custom Cursor Styling */
+html {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='8' fill='%2320b2aa' opacity='0.3'/%3E%3Ccircle cx='12' cy='12' r='4' fill='%2320b2aa'/%3E%3C/svg%3E") 12 12, auto;
+}
+
+/* Pointer cursor for clickable elements */
+a, button, [role="button"], 
+input[type="submit"], input[type="button"],
+.cursor-pointer {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'%3E%3Ccircle cx='14' cy='14' r='10' fill='%23f08b7d' opacity='0.3'/%3E%3Ccircle cx='14' cy='14' r='5' fill='%23f08b7d'/%3E%3C/svg%3E") 14 14, pointer;
+}
+
+/* Text cursor for inputs */
+input[type="text"], input[type="email"], input[type="password"],
+input[type="tel"], input[type="number"], textarea {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='24' viewBox='0 0 20 24'%3E%3Crect x='8' y='0' width='4' height='24' fill='%2320b2aa' rx='2'/%3E%3C/svg%3E") 10 12, text;
+}
