@@ -1,73 +1,109 @@
-import React, { useState } from 'react';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Shield, Plus, X, User, Phone, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useAuth, EmergencyContact } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import safetyIllustration from '@/assets/safety-illustration.png';
 
+const MAX_CONTACTS = 5;
+
 export default function Onboarding() {
-  const { updateEmergencyContacts } = useAuth();
+  const { user, updateEmergencyContacts } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  
-  const [contacts, setContacts] = useState<EmergencyContact[]>([
-    { id: '1', name: '', phone: '' },
-  ]);
+
+  // Build initial contacts from saved data (if exists)
+  const initialContacts: EmergencyContact[] = useMemo(() => {
+    const saved = (user as any)?.emergencyContacts;
+
+    if (Array.isArray(saved) && saved.length > 0) {
+      return saved.map((c: any, idx: number) => ({
+        // Mongoose subdocs often have _id; some frontends use id
+        id: String(c.id || c._id || `${Date.now()}-${idx}`),
+        name: c.name ?? '',
+        phone: c.phone ?? '',
+      }));
+    }
+
+    // default: one empty row
+    return [{ id: '1', name: '', phone: '' }];
+  }, [user]);
+
+  const [contacts, setContacts] = useState<EmergencyContact[]>(initialContacts);
+
+  // IMPORTANT: when user loads/changes (after login / after saving), update UI
+  useEffect(() => {
+    setContacts(initialContacts);
+  }, [initialContacts]);
 
   const addContact = () => {
-    if (contacts.length >= 3) {
+    if (contacts.length >= MAX_CONTACTS) {
       toast({
-        title: "Maximum contacts reached",
-        description: "You can add up to 3 emergency contacts.",
-        variant: "destructive",
+        title: 'Maximum contacts reached',
+        description: `You can add up to ${MAX_CONTACTS} emergency contacts.`,
+        variant: 'destructive',
       });
       return;
     }
-    setContacts([...contacts, { id: Date.now().toString(), name: '', phone: '' }]);
+
+    setContacts((prev) => [
+      ...prev,
+      { id: Date.now().toString(), name: '', phone: '' },
+    ]);
   };
 
   const removeContact = (id: string) => {
-    if (contacts.length === 1) return;
-    setContacts(contacts.filter(c => c.id !== id));
+    setContacts((prev) => {
+      const next = prev.filter((c) => c.id !== id);
+      return next.length === 0 ? [{ id: '1', name: '', phone: '' }] : next;
+    });
   };
 
   const updateContact = (id: string, field: 'name' | 'phone', value: string) => {
-    setContacts(contacts.map(c => 
-      c.id === id ? { ...c, [field]: value } : c
-    ));
+    setContacts((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, [field]: value } : c))
+    );
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    const validContacts = contacts.filter(c => c.name.trim() && c.phone.trim());
-    
+
+    const validContacts = contacts
+      .map((c) => ({
+        ...c,
+        name: c.name.trim(),
+        phone: c.phone.trim(),
+      }))
+      .filter((c) => c.name && c.phone);
+
     if (validContacts.length === 0) {
       toast({
-        title: "Add at least one contact",
-        description: "Emergency contacts help us notify your loved ones in case of an emergency.",
-        variant: "destructive",
+        title: 'Add at least one contact',
+        description:
+          'Emergency contacts help us notify your loved ones in case of an emergency.',
+        variant: 'destructive',
       });
       return;
     }
 
+    // Save through AuthContext (should persist to backend + update user)
     updateEmergencyContacts(validContacts);
-    
+
     toast({
-      title: "Setup complete!",
-      description: "Your emergency contacts have been saved.",
+      title: 'Saved!',
+      description: 'Your emergency contacts have been updated.',
     });
-    
+
     navigate('/home');
   };
 
   const handleSkip = () => {
     toast({
-      title: "Setup skipped",
-      description: "You can add emergency contacts later from your profile.",
+      title: 'Setup skipped',
+      description: 'You can add emergency contacts later from your profile.',
     });
     navigate('/home');
   };
@@ -79,14 +115,16 @@ export default function Onboarding() {
         <div className="max-w-sm mx-auto text-center">
           <div className="flex items-center justify-center gap-2 mb-3">
             <Shield className="h-7 w-7 text-header-foreground" />
-            <span className="text-xl font-bold text-header-foreground">Emergency Contacts</span>
+            <span className="text-xl font-bold text-header-foreground">
+              Emergency Contacts
+            </span>
           </div>
           <p className="text-header-foreground/90 text-sm">
-            Add up to 3 trusted contacts who will be notified immediately when you trigger an SOS alert.
+            Add up to {MAX_CONTACTS} trusted contacts who will be notified immediately when you trigger an SOS alert.
           </p>
-          <img 
-            src={safetyIllustration} 
-            alt="Safety illustration" 
+          <img
+            src={safetyIllustration}
+            alt="Safety illustration"
             className="w-32 h-32 mx-auto mt-4 object-contain rounded-xl"
           />
         </div>
@@ -97,14 +135,15 @@ export default function Onboarding() {
         <div className="max-w-sm mx-auto">
           <form onSubmit={handleSubmit} className="space-y-4">
             {contacts.map((contact, index) => (
-              <div 
-                key={contact.id} 
+              <div
+                key={contact.id}
                 className="p-4 bg-card rounded-2xl border border-border shadow-sm animate-slide-in-up"
               >
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-sm font-semibold text-foreground">
                     Contact {index + 1}
                   </span>
+
                   {contacts.length > 1 && (
                     <Button
                       type="button"
@@ -128,11 +167,12 @@ export default function Onboarding() {
                       className="h-11 pl-10 rounded-xl bg-muted/30"
                     />
                   </div>
+
                   <div className="relative">
                     <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       type="tel"
-                      placeholder="Phone number"
+                      placeholder="Phone number (with country code preferred)"
                       value={contact.phone}
                       onChange={(e) => updateContact(contact.id, 'phone', e.target.value)}
                       className="h-11 pl-10 rounded-xl bg-muted/30"
@@ -142,7 +182,7 @@ export default function Onboarding() {
               </div>
             ))}
 
-            {contacts.length < 3 && (
+            {contacts.length < MAX_CONTACTS && (
               <Button
                 type="button"
                 variant="soft-outline"
@@ -156,17 +196,12 @@ export default function Onboarding() {
             )}
 
             <div className="pt-4 space-y-3">
-              <Button 
-                type="submit" 
-                variant="coral"
-                size="lg"
-                className="w-full rounded-xl"
-              >
+              <Button type="submit" variant="coral" size="lg" className="w-full rounded-xl">
                 Save & Continue
                 <ChevronRight className="h-5 w-5 ml-2" />
               </Button>
 
-              <Button 
+              <Button
                 type="button"
                 variant="ghost"
                 size="lg"

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, X, Check, Radio, MapPin, Mic, Video } from 'lucide-react';
+import { ChevronLeft, X, Check, Radio, MapPin, Video } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSOS } from '@/contexts/SOSContext';
 import { cn } from '@/lib/utils';
@@ -16,15 +16,17 @@ function ProgressItem({ label, isComplete, isActive, icon }: ProgressItemProps) 
   return (
     <div className="flex items-center justify-between py-4 border-b border-primary-foreground/20 last:border-0">
       <div className="flex items-center gap-3">
-        <div className={cn(
-          "h-8 w-8 rounded-full flex items-center justify-center",
-          isComplete ? "bg-primary-foreground/20" : "bg-primary-foreground/10"
-        )}>
+        <div
+          className={cn(
+            "h-8 w-8 rounded-full flex items-center justify-center",
+            isComplete ? "bg-primary-foreground/20" : "bg-primary-foreground/10"
+          )}
+        >
           {icon}
         </div>
         <span className="text-primary-foreground font-medium">{label}</span>
       </div>
-      
+
       <div className="flex items-center gap-2">
         {isActive && !isComplete && (
           <div className="w-24 h-2 bg-primary-foreground/20 rounded-full overflow-hidden">
@@ -47,7 +49,7 @@ function ProgressItem({ label, isComplete, isActive, icon }: ProgressItemProps) 
 }
 
 export default function SOSActive() {
-  const { isSOSActive, sosProgress, cancelSOS, currentSOS } = useSOS();
+  const { sosProgress, cancelSOS, currentSOS } = useSOS();
   const navigate = useNavigate();
 
   const handleCancel = () => {
@@ -56,39 +58,44 @@ export default function SOSActive() {
   };
 
   const progressItems = [
-    { 
-      label: 'Contacting control center', 
+    {
+      label: 'Contacting control center',
       isComplete: sosProgress.contactingCenter,
       isActive: !sosProgress.contactingCenter,
-      icon: <Radio className="h-4 w-4 text-primary-foreground" />
+      icon: <Radio className="h-4 w-4 text-primary-foreground" />,
     },
-    { 
-      label: 'Sending alert to emergency contacts', 
+    {
+      label: 'Sending alert to emergency contacts',
       isComplete: sosProgress.alertingContacts,
       isActive: sosProgress.contactingCenter && !sosProgress.alertingContacts,
-      icon: <MapPin className="h-4 w-4 text-primary-foreground" />
+      icon: <MapPin className="h-4 w-4 text-primary-foreground" />,
     },
-    { 
-      label: 'Live location tracking', 
+    {
+      label: 'Live location tracking',
       isComplete: sosProgress.trackingLocation,
       isActive: sosProgress.alertingContacts && !sosProgress.trackingLocation,
-      icon: <MapPin className="h-4 w-4 text-primary-foreground" />
+      icon: <MapPin className="h-4 w-4 text-primary-foreground" />,
     },
-    { 
-      label: 'Audio & Video recording in progress', 
+    {
+      label: 'Audio & Video recording in progress',
       isComplete: sosProgress.recording,
       isActive: sosProgress.trackingLocation && !sosProgress.recording,
-      icon: <Video className="h-4 w-4 text-primary-foreground" />
+      icon: <Video className="h-4 w-4 text-primary-foreground" />,
     },
   ];
+
+  // Safe read (prevents crash)
+  const lat = currentSOS?.location?.latitude;
+  const lng = currentSOS?.location?.longitude;
+  const hasLocation = lat != null && lng != null;
 
   return (
     <div className="min-h-screen bg-destructive flex flex-col">
       {/* Header */}
       <header className="px-4 py-4 flex items-center gap-3">
-        <Button 
-          variant="ghost" 
-          size="icon" 
+        <Button
+          variant="ghost"
+          size="icon"
           className="text-destructive-foreground hover:bg-destructive-foreground/10"
           onClick={handleCancel}
         >
@@ -126,11 +133,11 @@ export default function SOSActive() {
             </div>
           )}
 
-          {/* Location Info */}
-          {currentSOS && (
+          {/* Location Info (SAFE) */}
+          {hasLocation && (
             <div className="mt-6 p-3 bg-destructive-foreground/10 rounded-xl">
               <p className="text-xs text-primary-foreground/80 text-center">
-                📍 Location: {currentSOS.location.latitude.toFixed(4)}, {currentSOS.location.longitude.toFixed(4)}
+                📍 Location: {Number(lat).toFixed(4)}, {Number(lng).toFixed(4)}
               </p>
             </div>
           )}

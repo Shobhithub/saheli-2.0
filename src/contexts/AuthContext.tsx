@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import axios from 'axios';
 import api from '../lib/api';
 
 export type UserRole = 'user' | 'police' | 'admin';
@@ -56,12 +57,16 @@ export interface Report {
   policeComment?: string;
 }
 
+export type AuthResult =
+  | { ok: true; user: User }
+  | { ok: false; error: string };
+
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
-  signup: (data: SignupData) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<AuthResult>;
+  signup: (data: SignupData) => Promise<AuthResult>;
   logout: () => void;
   updateEmergencyContacts: (contacts: EmergencyContact[]) => void;
 }
@@ -71,35 +76,20 @@ interface SignupData {
   email: string;
   phone: string;
   password: string;
-  role?: UserRole;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock users for demo
-const mockUsers: (User & { password: string })[] = [
-  {
-    id: '1',
-    name: 'Shreya Sharma',
-    email: 'shreya@example.com',
-    phone: '+91 98765 43210',
-    password: 'password123',
-    role: 'user',
-    emergencyContacts: [
-      { id: '1', name: 'Mom', phone: '+91 98765 43211' },
-      { id: '2', name: 'Dad', phone: '+91 98765 43212' },
-    ],
-  },
-  {
-    id: '2',
-    name: 'Officer Priya',
-    email: 'police@example.com',
-    phone: '+91 98765 43220',
-    password: 'police123',
-    role: 'police',
-    emergencyContacts: [],
-  },
-];
+// Surface the backend's own message (invalid credentials, database unavailable,
+// ...) instead of a generic "something went wrong".
+function describeError(error: unknown, fallback: string): string {
+  if (axios.isAxiosError(error)) {
+    const serverMessage = (error.response?.data as { message?: string } | undefined)?.message;
+    if (serverMessage) return serverMessage;
+    if (!error.response) return 'Cannot reach the server. Is the backend running?';
+  }
+  return fallback;
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -109,15 +99,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Check for stored session in localStorage
     const storedUser = localStorage.getItem('saheli_user');
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch {
+        // Corrupt entry would otherwise throw and blank the whole app.
+        localStorage.removeItem('saheli_user');
+      }
     }
     setIsLoading(false);
   }, []);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (email: string, password: string): Promise<AuthResult> => {
     setIsLoading(true);
     try {
-      const { data } = await api.post('/auth/login', { email, password });
+      const { data } = await api.post('/auth/login', {
+        email: email.trim().toLowerCase(),
+        password,
+      });
 
       const userToStore: User = {
         id: data._id,
@@ -131,24 +129,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       setUser(userToStore);
       localStorage.setItem('saheli_user', JSON.stringify(userToStore));
-      setIsLoading(false);
-      return true;
+      return { ok: true, user: userToStore };
     } catch (error) {
       console.error('Login failed:', error);
+      return { ok: false, error: describeError(error, 'Invalid email or password.') };
+    } finally {
       setIsLoading(false);
-      return false;
     }
   };
 
-  const signup = async (data: SignupData): Promise<boolean> => {
+  const signup = async (data: SignupData): Promise<AuthResult> => {
     setIsLoading(true);
     try {
       const { data: responseData } = await api.post('/auth/register', {
         fullName: data.name,
-        email: data.email,
+        email: data.email.trim().toLowerCase(),
         password: data.password,
         phone: data.phone,
-        role: data.role
       });
 
       const userToStore: User = {
@@ -163,12 +160,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       setUser(userToStore);
       localStorage.setItem('saheli_user', JSON.stringify(userToStore));
-      setIsLoading(false);
-      return true;
+      return { ok: true, user: userToStore };
     } catch (error) {
       console.error('Signup failed:', error);
+      return { ok: false, error: describeError(error, 'Registration failed. Please try again.') };
+    } finally {
       setIsLoading(false);
-      return false;
     }
   };
 

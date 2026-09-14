@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { createContext, useContext, useState, ReactNode, useCallback, useEffect } from 'react';
 import api from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
@@ -120,7 +121,8 @@ export function SOSProvider({ children }: { children: ReactNode }) {
 
     try {
       const res = await api.post('/sos/create', { latitude, longitude });
-      setCurrentSOS(res.data);
+      // NEW (fixes the crash):
+        setCurrentSOS(res.data.alert); 
 
       // Simulate progression of systems coming online
       setTimeout(() => setSOSProgress(p => ({ ...p, alertingContacts: true })), 1000);

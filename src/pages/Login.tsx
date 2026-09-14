@@ -22,29 +22,24 @@ export default function Login() {
     e.preventDefault();
     setIsLoading(true);
 
-    const success = await login(email, password);
-    
-    if (success) {
+    const result = await login(email, password);
+
+    if (result.ok) {
       toast({
         title: "Welcome back!",
         description: "You've successfully logged in.",
       });
-      // Navigate based on role - we check from AuthContext
-      const storedUser = localStorage.getItem('saheli_user');
-      if (storedUser) {
-        const user = JSON.parse(storedUser);
-        navigate(user.role === 'police' ? '/police' : '/home');
-      } else {
-        navigate('/home');
-      }
+      // Route straight off the authenticated user rather than re-reading
+      // localStorage, so the redirect can't miss the police role.
+      navigate(result.user.role === 'police' ? '/police' : '/home');
     } else {
       toast({
         title: "Login failed",
-        description: "Invalid email or password. Try shreya@example.com / password123",
+        description: 'error' in result ? result.error : 'Unable to log in.',
         variant: "destructive",
       });
     }
-    
+
     setIsLoading(false);
   };
 
@@ -146,14 +141,6 @@ export default function Login() {
               <Link to="/register" className="text-primary font-semibold hover:underline">
                 Register Now
               </Link>
-            </p>
-          </div>
-
-          {/* Demo credentials hint */}
-          <div className="mt-8 p-4 bg-muted/50 rounded-xl border border-border">
-            <p className="text-xs text-muted-foreground text-center">
-              <strong>Demo:</strong> User: shreya@example.com / password123<br />
-              Police: police@example.com / police123
             </p>
           </div>
         </div>

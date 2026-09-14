@@ -2,7 +2,13 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { SOSProvider } from "@/contexts/SOSContext";
 import { useState, useEffect } from "react";
@@ -36,11 +42,21 @@ import Helpline from "./pages/Helpline";
 
 const queryClient = new QueryClient();
 
-function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode; allowedRoles?: string[] }) {
+function ProtectedRoute({
+  children,
+  allowedRoles,
+}: {
+  children: React.ReactNode;
+  allowedRoles?: string[];
+}) {
   const { isAuthenticated, user, isLoading } = useAuth();
 
   if (isLoading) {
-    return <div className="min-h-screen bg-background flex items-center justify-center">Loading...</div>;
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        Loading...
+      </div>
+    );
   }
 
   if (!isAuthenticated) {
@@ -48,7 +64,9 @@ function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode;
   }
 
   if (allowedRoles && user && !allowedRoles.includes(user.role)) {
-    return <Navigate to={user.role === 'police' ? '/police' : '/home'} replace />;
+    return (
+      <Navigate to={user.role === "police" ? "/police" : "/home"} replace />
+    );
   }
 
   return <>{children}</>;
@@ -57,40 +75,190 @@ function ProtectedRoute({ children, allowedRoles }: { children: React.ReactNode;
 function AppRoutes() {
   const { isAuthenticated, user } = useAuth();
 
-  // Check if user has seen welcome slides
-  const hasSeenWelcome = localStorage.getItem('saheli_welcome_seen') === 'true';
+  const defaultAfterLogin =
+    user?.role === "police" ? "/police" : "/home";
 
   return (
     <Routes>
       {/* Auth Routes */}
-      <Route path="/login" element={isAuthenticated ? <Navigate to={user?.role === 'police' ? '/police' : '/home'} /> : <Login />} />
-      <Route path="/register" element={isAuthenticated ? <Navigate to="/home" /> : <Register />} />
+      <Route
+        path="/login"
+        element={
+          isAuthenticated ? (
+            <Navigate to={defaultAfterLogin} replace />
+          ) : (
+            <Login />
+          )
+        }
+      />
+      <Route
+        path="/register"
+        element={
+          isAuthenticated ? <Navigate to={defaultAfterLogin} replace /> : <Register />
+        }
+      />
       <Route path="/welcome" element={<WelcomeSlides />} />
-      <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+      <Route
+        path="/onboarding"
+        element={
+          <ProtectedRoute>
+            <Onboarding />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Root */}
+      <Route
+        path="/"
+        element={
+          <Navigate
+            to={isAuthenticated ? defaultAfterLogin : "/login"}
+            replace
+          />
+        }
+      />
 
       {/* Citizen Routes */}
-      <Route path="/" element={<Navigate to="/home" replace />} />
-      <Route path="/home" element={<ProtectedRoute allowedRoles={['user']}><Home /></ProtectedRoute>} />
-      <Route path="/sos-active" element={<ProtectedRoute allowedRoles={['user']}><SOSActive /></ProtectedRoute>} />
-      <Route path="/community" element={<ProtectedRoute allowedRoles={['user']}><Community /></ProtectedRoute>} />
-      <Route path="/reports" element={<ProtectedRoute allowedRoles={['user']}><Reports /></ProtectedRoute>} />
-      <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-      <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-      <Route path="/helpline" element={<ProtectedRoute><Helpline /></ProtectedRoute>} />
+      <Route
+        path="/home"
+        element={
+          <ProtectedRoute allowedRoles={["user"]}>
+            <Home />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/sos-active"
+        element={
+          <ProtectedRoute allowedRoles={["user"]}>
+            <SOSActive />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/community"
+        element={
+          <ProtectedRoute allowedRoles={["user"]}>
+            <Community />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/reports"
+        element={
+          <ProtectedRoute allowedRoles={["user"]}>
+            <Reports />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <Profile />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings"
+        element={
+          <ProtectedRoute>
+            <Settings />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/helpline"
+        element={
+          <ProtectedRoute>
+            <Helpline />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Feature Routes */}
-      <Route path="/fake-call" element={<ProtectedRoute><FakeCall /></ProtectedRoute>} />
-      <Route path="/safe-route" element={<ProtectedRoute><SafeRoute /></ProtectedRoute>} />
-      <Route path="/travel-companion" element={<ProtectedRoute><TravelCompanion /></ProtectedRoute>} />
-      <Route path="/recording" element={<ProtectedRoute><Recording /></ProtectedRoute>} />
-      <Route path="/transport" element={<ProtectedRoute><Transport /></ProtectedRoute>} />
+      <Route
+        path="/fake-call"
+        element={
+          <ProtectedRoute>
+            <FakeCall />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/safe-route"
+        element={
+          <ProtectedRoute>
+            <SafeRoute />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/travel-companion"
+        element={
+          <ProtectedRoute>
+            <TravelCompanion />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/recording"
+        element={
+          <ProtectedRoute>
+            <Recording />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/transport"
+        element={
+          <ProtectedRoute>
+            <Transport />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Police Routes */}
-      <Route path="/police" element={<ProtectedRoute allowedRoles={['police']}><PoliceDashboard /></ProtectedRoute>} />
-      <Route path="/police/alerts" element={<ProtectedRoute allowedRoles={['police']}><PoliceAlerts /></ProtectedRoute>} />
-      <Route path="/police/reports" element={<ProtectedRoute allowedRoles={['police']}><PoliceReports /></ProtectedRoute>} />
-      <Route path="/police/officers" element={<ProtectedRoute allowedRoles={['police']}><PoliceOfficers /></ProtectedRoute>} />
-      <Route path="/police/settings" element={<ProtectedRoute allowedRoles={['police']}><PoliceSettings /></ProtectedRoute>} />
+      <Route
+        path="/police"
+        element={
+          <ProtectedRoute allowedRoles={["police"]}>
+            <PoliceDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/police/alerts"
+        element={
+          <ProtectedRoute allowedRoles={["police"]}>
+            <PoliceAlerts />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/police/reports"
+        element={
+          <ProtectedRoute allowedRoles={["police"]}>
+            <PoliceReports />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/police/officers"
+        element={
+          <ProtectedRoute allowedRoles={["police"]}>
+            <PoliceOfficers />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/police/settings"
+        element={
+          <ProtectedRoute allowedRoles={["police"]}>
+            <PoliceSettings />
+          </ProtectedRoute>
+        }
+      />
 
       <Route path="*" element={<NotFound />} />
     </Routes>
@@ -99,17 +267,14 @@ function AppRoutes() {
 
 function AppWithSplash() {
   const [showSplash, setShowSplash] = useState(true);
-  const hasSeenSplash = sessionStorage.getItem('saheli_splash_seen') === 'true';
+  const hasSeenSplash = sessionStorage.getItem("saheli_splash_seen") === "true";
 
-  // Skip splash if already seen this session
   useEffect(() => {
-    if (hasSeenSplash) {
-      setShowSplash(false);
-    }
+    if (hasSeenSplash) setShowSplash(false);
   }, [hasSeenSplash]);
 
   const handleSplashComplete = () => {
-    sessionStorage.setItem('saheli_splash_seen', 'true');
+    sessionStorage.setItem("saheli_splash_seen", "true");
     setShowSplash(false);
   };
 
@@ -124,29 +289,39 @@ function AppWithSplash() {
   );
 }
 
-// Wrapper to handle welcome flow
+/**
+ * Better welcome flow:
+ * - no 100ms polling
+ * - re-check localStorage on route change + window focus
+ * - still listens to "storage" for other tabs
+ */
 function AppRoutesWithWelcome() {
   const { isAuthenticated } = useAuth();
-  const [hasSeenWelcome, setHasSeenWelcome] = useState(() =>
-    localStorage.getItem('saheli_welcome_seen') === 'true'
-  );
+  const location = useLocation();
 
-  // Listen for localStorage changes (when welcome slides complete)
+  const [hasSeenWelcome, setHasSeenWelcome] = useState(() => {
+    return localStorage.getItem("saheli_welcome_seen") === "true";
+  });
+
   useEffect(() => {
-    const checkWelcome = () => {
-      const seen = localStorage.getItem('saheli_welcome_seen') === 'true';
-      setHasSeenWelcome(seen);
+    // Re-check when route changes (same tab)
+    setHasSeenWelcome(localStorage.getItem("saheli_welcome_seen") === "true");
+  }, [location.pathname]);
+
+  useEffect(() => {
+    const onStorage = () => {
+      setHasSeenWelcome(localStorage.getItem("saheli_welcome_seen") === "true");
+    };
+    const onFocus = () => {
+      setHasSeenWelcome(localStorage.getItem("saheli_welcome_seen") === "true");
     };
 
-    // Check periodically for changes
-    const interval = setInterval(checkWelcome, 100);
-
-    // Also listen for storage events
-    window.addEventListener('storage', checkWelcome);
+    window.addEventListener("storage", onStorage);
+    window.addEventListener("focus", onFocus);
 
     return () => {
-      clearInterval(interval);
-      window.removeEventListener('storage', checkWelcome);
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("focus", onFocus);
     };
   }, []);
 
@@ -177,4 +352,3 @@ const App = () => (
 );
 
 export default App;
-

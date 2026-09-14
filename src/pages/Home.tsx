@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -7,7 +8,6 @@ import {
   Phone as PhoneIcon,
   Mic,
   Video,
-  Shield,
   Route,
   AlertTriangle
 } from 'lucide-react';
@@ -26,6 +26,14 @@ const toolkitItems = [
   { icon: PhoneIcon, label: 'Fake call', color: 'bg-secondary text-secondary-foreground', path: '/fake-call' },
 ];
 
+// digits only + add India code if user saved 10-digit number
+const normalizePhone = (phone: string) => {
+  let p = String(phone).replace(/\D/g, '');
+  if (p.startsWith('0')) p = `91${p.slice(1)}`;
+  if (p.length === 10) p = `91${p}`;
+  return p;
+};
+
 export default function Home() {
   const { user } = useAuth();
   const { triggerSOS } = useSOS();
@@ -34,17 +42,15 @@ export default function Home() {
 
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [isSharingLocation, setIsSharingLocation] = useState(false);
 
   useEffect(() => {
     // Get user's location on mount
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        },
-        (err) => {
-          console.log('Location error:', err);
-        }
+        (pos) => setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        (err) => console.log('Location error:', err),
+        { enableHighAccuracy: true, timeout: 5000 }
       );
     }
   }, []);
@@ -59,24 +65,97 @@ export default function Home() {
           navigate('/sos-active');
           setIsGettingLocation(false);
         },
-        (err) => {
+        () => {
           toast({
             title: "Location required",
             description: "Please enable location access to use SOS feature.",
             variant: "destructive",
           });
           setIsGettingLocation(false);
-          // Use fallback location for demo
+          // fallback
           triggerSOS(17.4435, 78.3772);
           navigate('/sos-active');
         },
         { enableHighAccuracy: true, timeout: 5000 }
       );
     } else {
-      // Fallback for demo
+      // fallback
       triggerSOS(17.4435, 78.3772);
       navigate('/sos-active');
       setIsGettingLocation(false);
+    }
+  };
+
+  const handleShareLocation = async () => {
+    try {
+      setIsSharingLocation(true);
+
+      // Ensure we have a location (try to fetch if missing)
+      let lat = location?.lat;
+      let lng = location?.lng;
+
+      if (lat == null || lng == null) {
+        if (!navigator.geolocation) {
+          toast({
+            title: 'Location not available',
+            description: 'Your device does not support location.',
+            variant: 'destructive',
+          });
+          return;
+        }
+
+        const pos = await new Promise<GeolocationPosition>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 5000,
+          });
+        });
+
+        lat = pos.coords.latitude;
+        lng = pos.coords.longitude;
+        setLocation({ lat, lng });
+      }
+
+      const mapsLink = `https://www.google.com/maps?q=${lat},${lng}`;
+
+      const name =
+        (user as any)?.fullName ||
+        (user as any)?.name ||
+        (user as any)?.username ||
+        'I';
+
+      const message = `${name} shared a location:\n${mapsLink}`;
+
+      // If you want to send directly to the first saved emergency contact:
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const emergencyPhoneRaw = (user as any)?.emergencyContacts?.[0]?.phone as string | undefined;
+
+      let whatsappUrl: string;
+
+      if (emergencyPhoneRaw) {
+        const emergencyPhone = normalizePhone(emergencyPhoneRaw);
+        // Directly opens chat to that number
+        whatsappUrl = `https://wa.me/${emergencyPhone}?text=${encodeURIComponent(message)}`;
+      } else {
+        // Opens WhatsApp with message; user chooses recipient
+        whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+        toast({
+          title: 'No emergency contact found',
+          description: 'Opening WhatsApp—please select a contact to share your location.',
+        });
+      }
+
+      // Redirect to WhatsApp (app on mobile, web on desktop)
+      window.location.href = whatsappUrl;
+    } catch (err) {
+      console.error('Share location error:', err);
+      toast({
+        title: 'Unable to share location',
+        description: 'Please allow location permission and try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSharingLocation(false);
     }
   };
 
@@ -106,7 +185,6 @@ export default function Home() {
           </h2>
 
           <div className="relative">
-            {/* Toolkit Grid */}
             <div className="grid grid-cols-2 gap-4">
               {toolkitItems.map((item, index) => (
                 <Button
@@ -114,11 +192,8 @@ export default function Home() {
                   variant="secondary"
                   className="h-auto py-4 flex flex-col items-center gap-2 rounded-2xl hover:shadow-md transition-all"
                   onClick={() => {
-                    if (item.path) {
-                      navigate(item.path);
-                    } else {
-                      toast({ title: item.label, description: "Feature coming soon!" });
-                    }
+                    if (item.path) navigate(item.path);
+                    else toast({ title: item.label, description: "Feature coming soon!" });
                   }}
                 >
                   <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
@@ -132,9 +207,11 @@ export default function Home() {
             {/* SOS Button - Centered */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
               <div className="relative">
-                {/* Ripple effects */}
                 <div className="absolute inset-0 bg-destructive/20 rounded-full animate-ripple" />
-                <div className="absolute inset-0 bg-destructive/15 rounded-full animate-ripple" style={{ animationDelay: '0.5s' }} />
+                <div
+                  className="absolute inset-0 bg-destructive/15 rounded-full animate-ripple"
+                  style={{ animationDelay: '0.5s' }}
+                />
 
                 <Button
                   variant="sos"
@@ -143,11 +220,7 @@ export default function Home() {
                   onClick={handleSOSPress}
                   disabled={isGettingLocation}
                 >
-                  {isGettingLocation ? (
-                    <span className="animate-pulse">...</span>
-                  ) : (
-                    'SOS'
-                  )}
+                  {isGettingLocation ? <span className="animate-pulse">...</span> : 'SOS'}
                 </Button>
               </div>
             </div>
@@ -185,6 +258,7 @@ export default function Home() {
               <div className="h-10 w-10 rounded-full bg-accent/10 flex items-center justify-center">
                 <MapPin className="h-5 w-5 text-accent" />
               </div>
+
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-foreground">Current Location</p>
                 <p className="text-xs text-muted-foreground truncate">
@@ -194,8 +268,15 @@ export default function Home() {
                   }
                 </p>
               </div>
-              <Button variant="teal" size="sm" className="rounded-lg">
-                Share
+
+              <Button
+                variant="teal"
+                size="sm"
+                className="rounded-lg"
+                onClick={handleShareLocation}
+                disabled={isSharingLocation}
+              >
+                {isSharingLocation ? '...' : 'Share'}
               </Button>
             </div>
           </div>

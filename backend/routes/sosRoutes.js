@@ -7,9 +7,9 @@ const router = express.Router();
 // For now, we might skip 'protect' if we haven't implemented the middleware file yet.
 // But to do it "properly", we should check basic auth.
 // Let's create the route without protect first to ensure the basic flow works, then add auth.
-router.post('/create', createSOS);
-router.get('/active', getActiveSOS);
-router.put('/:id/resolve', resolveSOS);
+router.post('/create',protect, createSOS);
+router.get('/active', protect, getActiveSOS);
+router.put('/:id/resolve', protect, resolveSOS);
 
 export default router;
 

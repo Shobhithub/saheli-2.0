@@ -45,14 +45,14 @@ export default function Register() {
     e.preventDefault();
     setIsLoading(true);
 
-    const success = await signup({
+    const result = await signup({
       name: formData.name,
       email: formData.email,
       phone: formData.phone,
       password: formData.password,
     });
 
-    if (success) {
+    if (result.ok) {
       toast({
         title: "Account created!",
         description: "Welcome to SAHELI. Let's set up your emergency contacts.",
@@ -61,7 +61,7 @@ export default function Register() {
     } else {
       toast({
         title: "Registration failed",
-        description: "Something went wrong. Please try again.",
+        description: result.error,
         variant: "destructive",
       });
     }

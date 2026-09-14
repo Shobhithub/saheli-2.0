@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from 'react';
 import { Search, Send, MoreHorizontal, Heart, MessageCircle, Share2, Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
