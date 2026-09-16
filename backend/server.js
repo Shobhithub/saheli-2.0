@@ -17,12 +17,11 @@ const httpServer = createServer(app);
 const io = new Server(httpServer, {
     cors: {
         origin: [
-            "http://localhost:8080", 
-            "http://localhost:5173", 
-            "http://127.0.0.1:8080", 
+            "http://localhost:8080",
+            "http://localhost:5173",
+            "http://127.0.0.1:8080",
             "http://127.0.0.1:5173",
-            "https://saheli.gouri.fun",
-            "http://saheli.gouri.fun"
+            "https://frolicking-monstera-71221d.netlify.app"
         ],
         methods: ["GET", "POST"],
         credentials: true
@@ -39,8 +38,7 @@ const allowedOrigins = [
     "http://localhost:5173",
     "http://127.0.0.1:8080",
     "http://127.0.0.1:5173",
-    "https://saheli.gouri.fun",
-    "http://saheli.gouri.fun"
+    "https://frolicking-monstera-71221d.netlify.app"
 ];
 
 app.use(cors({
