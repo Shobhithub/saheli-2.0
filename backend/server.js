@@ -1,5 +1,5 @@
+import "dotenv/config";
 import express from "express";
-import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import { createServer } from "http";
@@ -8,7 +8,7 @@ import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import sosRoutes from "./routes/sosRoutes.js";
 
-dotenv.config();
+// dotenv.config();
 
 connectDB();
 
@@ -98,6 +98,7 @@ io.on("connection", (socket) => {
 });
 
 // const PORT = process.env.PORT_SAHELI || 4000;
-const PORT = process.env.PORT || 4000;
+// const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT_SAHELI || 4000;
 
 httpServer.listen(PORT, () => console.log(`Server started on port ${PORT}`));
