@@ -34,6 +34,9 @@ const DEFAULT_LOCATION = { lat: 17.4455, lng: 78.3792 };
 // how far to search for places near user
 const RADIUS_METERS = 2500;
 
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+
 // Overpass element type
 type OverpassElement = {
   type: "node" | "way" | "relation";
@@ -115,7 +118,10 @@ export default function SafeRoute() {
         setIsLocating(false);
 
         if (mapInstanceRef.current) {
-          mapInstanceRef.current.setView([newLocation.lat, newLocation.lng], 14);
+          mapInstanceRef.current.setView(
+            [newLocation.lat, newLocation.lng],
+            14,
+          );
           userMarkerRef.current?.setLatLng([newLocation.lat, newLocation.lng]);
           userPulseRef.current?.setLatLng([newLocation.lat, newLocation.lng]);
         }
@@ -129,7 +135,11 @@ export default function SafeRoute() {
           variant: "destructive",
         });
       },
-      { enableHighAccuracy: true, timeout: 5000 }
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 10000,
+      },
     );
   }, [toast]);
 
@@ -184,12 +194,20 @@ export default function SafeRoute() {
     try {
       setIsLoadingPlaces(true);
 
-      const query = buildOverpassQuery(userLocation.lat, userLocation.lng, RADIUS_METERS);
+      const query = buildOverpassQuery(
+        userLocation.lat,
+        userLocation.lng,
+        RADIUS_METERS,
+      );
 
-      const res = await fetch("https://overpass-api.de/api/interpreter", {
+      const res = await fetch(`${API_BASE_URL}/api/overpass/query`, {
         method: "POST",
-        headers: { "Content-Type": "text/plain" },
-        body: query,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          query,
+        }),
       });
 
       const data = await res.json();
@@ -207,8 +225,16 @@ export default function SafeRoute() {
           let category: PlaceCategory | null = null;
 
           if (amenity === "police") category = "police";
-          else if (["hospital", "clinic", "doctors", "pharmacy"].includes(amenity)) category = "medical";
-          else if (["community_centre", "social_facility", "townhall"].includes(amenity)) category = "community";
+          else if (
+            ["hospital", "clinic", "doctors", "pharmacy"].includes(amenity)
+          )
+            category = "medical";
+          else if (
+            ["community_centre", "social_facility", "townhall"].includes(
+              amenity,
+            )
+          )
+            category = "community";
 
           if (!category) return null;
 
@@ -217,8 +243,8 @@ export default function SafeRoute() {
             (category === "police"
               ? "Police Station"
               : category === "medical"
-              ? "Medical"
-              : "Community Place");
+                ? "Medical"
+                : "Community Place");
 
           return {
             id: `${el.type}:${el.id}`,
@@ -240,7 +266,11 @@ export default function SafeRoute() {
         parsed.forEach((p) => {
           // color by category
           const color =
-            p.category === "police" ? "#ef4444" : p.category === "medical" ? "#2563eb" : "#16a34a";
+            p.category === "police"
+              ? "#ef4444"
+              : p.category === "medical"
+                ? "#2563eb"
+                : "#16a34a";
 
           const marker = L.circleMarker([p.lat, p.lng], {
             radius: 7,
@@ -250,11 +280,14 @@ export default function SafeRoute() {
             weight: 2,
           });
 
-          const emoji = p.category === "police" ? "👮" : p.category === "medical" ? "🏥" : "🏘️";
+          const emoji =
+            p.category === "police"
+              ? "👮"
+              : p.category === "medical"
+                ? "🏥"
+                : "🏘️";
 
-          marker.bindPopup(
-            `<b>${emoji} ${p.name}</b><br/>(${p.category})`
-          );
+          marker.bindPopup(`<b>${emoji} ${p.name}</b><br/>(${p.category})`);
 
           marker.addTo(placesLayerRef.current!);
         });
@@ -268,7 +301,8 @@ export default function SafeRoute() {
       console.error("Overpass fetch error:", e);
       toast({
         title: "Failed to load nearby places",
-        description: "Try again in a few seconds (Overpass may be rate-limiting).",
+        description:
+          "Try again in a few seconds (Overpass may be rate-limiting).",
         variant: "destructive",
       });
     } finally {
@@ -284,7 +318,9 @@ export default function SafeRoute() {
 
   const policeCount = places.filter((p) => p.category === "police").length;
   const medicalCount = places.filter((p) => p.category === "medical").length;
-  const communityCount = places.filter((p) => p.category === "community").length;
+  const communityCount = places.filter(
+    (p) => p.category === "community",
+  ).length;
 
   return (
     <div className="min-h-screen bg-background flex flex-col relative overflow-hidden">
@@ -296,14 +332,21 @@ export default function SafeRoute() {
       {/* Header */}
       <div className="relative z-10 p-4 pt-6 pointer-events-none">
         <div className="pointer-events-auto flex items-center gap-2 bg-white/90 backdrop-blur-md rounded-full p-2 pr-3 shadow-lg border border-white/50">
-          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => navigate(-1)}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 rounded-full"
+            onClick={() => navigate(-1)}
+          >
             <ChevronLeft className="h-5 w-5" />
           </Button>
 
           <div className="flex-1">
             <p className="text-sm font-semibold">Nearby Safety Places</p>
             <p className="text-[11px] text-muted-foreground">
-              {isLocating ? "Getting location..." : `Within ${(RADIUS_METERS / 1000).toFixed(1)}km`}
+              {isLocating
+                ? "Getting location..."
+                : `Within ${(RADIUS_METERS / 1000).toFixed(1)}km`}
             </p>
           </div>
 
@@ -315,22 +358,27 @@ export default function SafeRoute() {
             disabled={isLoadingPlaces}
             title="Refresh nearby places"
           >
-            <RefreshCw className={`h-4 w-4 text-primary ${isLoadingPlaces ? "animate-spin" : ""}`} />
+            <RefreshCw
+              className={`h-4 w-4 text-primary ${isLoadingPlaces ? "animate-spin" : ""}`}
+            />
           </Button>
         </div>
 
         {/* Indicators */}
         <div className="flex justify-between items-start mt-4 pointer-events-none">
           <Badge className="bg-white/90 text-red-500 hover:bg-white border-red-200 shadow-sm pointer-events-auto backdrop-blur-sm gap-1 pl-1">
-            <div className="w-2 h-2 rounded-full bg-red-500" /> Police ({policeCount})
+            <div className="w-2 h-2 rounded-full bg-red-500" /> Police (
+            {policeCount})
           </Badge>
 
           <Badge className="bg-white/90 text-blue-600 hover:bg-white border-blue-200 shadow-sm pointer-events-auto backdrop-blur-sm gap-1 pl-1">
-            <div className="w-2 h-2 rounded-full bg-blue-500" /> Medical ({medicalCount})
+            <div className="w-2 h-2 rounded-full bg-blue-500" /> Medical (
+            {medicalCount})
           </Badge>
 
           <Badge className="bg-white/90 text-green-600 hover:bg-white border-green-200 shadow-sm pointer-events-auto backdrop-blur-sm gap-1 pl-1">
-            <div className="w-2 h-2 rounded-full bg-green-500" /> Community ({communityCount})
+            <div className="w-2 h-2 rounded-full bg-green-500" /> Community (
+            {communityCount})
           </Badge>
         </div>
       </div>
@@ -349,7 +397,8 @@ export default function SafeRoute() {
           </div>
 
           <p className="text-xs text-green-600 mb-4 bg-green-50 p-2 rounded-lg border border-green-100">
-            Showing only nearest <b>Police</b>, <b>Medical</b>, and <b>Community</b> places near your current location.
+            Showing only nearest <b>Police</b>, <b>Medical</b>, and{" "}
+            <b>Community</b> places near your current location.
           </p>
 
           {/* Action Bar */}

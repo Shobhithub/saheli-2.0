@@ -1,38 +1,36 @@
 import "dotenv/config";
+
 import express from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import { createServer } from "http";
 import { Server } from "socket.io";
+
 import connectDB from "./config/db.js";
+
 import authRoutes from "./routes/authRoutes.js";
 import sosRoutes from "./routes/sosRoutes.js";
+import postRoutes from "./routes/postRoutes.js";
+import reportRoutes from "./routes/reportRoutes.js";
+import overpassRoutes from "./routes/overpassRoutes.js";
 
-// dotenv.config();
+// --------------------------------------------------
+// Database
+// --------------------------------------------------
 
 connectDB();
 
+// --------------------------------------------------
+// Express App
+// --------------------------------------------------
+
 const app = express();
 const httpServer = createServer(app);
-const io = new Server(httpServer, {
-  cors: {
-    origin: [
-      "http://localhost:8080",
-      "http://localhost:5173",
-      "http://127.0.0.1:8080",
-      "http://127.0.0.1:5173",
-      "https://sahelisafety.netlify.app",
-    ],
-    methods: ["GET", "POST"],
-    credentials: true,
-  },
-});
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
+// --------------------------------------------------
+// Allowed Frontend Origins
+// --------------------------------------------------
 
-// CORS configuration - handle preflight requests
 const allowedOrigins = [
   "http://localhost:8080",
   "http://localhost:5173",
@@ -41,64 +39,142 @@ const allowedOrigins = [
   "https://sahelisafety.netlify.app",
 ];
 
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      // Allow requests with no origin (like mobile apps or curl requests)
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.indexOf(origin) !== -1) {
-        callback(null, true);
-      } else {
-        console.error("CORS rejected origin:", origin);
-        callback(new Error(`Not allowed by CORS: ${origin}`));
-      }
-    },
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
-  }),
-);
+// --------------------------------------------------
+// CORS Configuration
+// --------------------------------------------------
 
-// Handle preflight requests explicitly
-app.options("*", cors());
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests without an Origin header
+    // Example: Postman, curl, server-to-server requests
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    console.error("❌ CORS rejected origin:", origin);
+
+    return callback(
+      new Error(`Not allowed by CORS: ${origin}`)
+    );
+  },
+
+  credentials: true,
+
+  methods: [
+    "GET",
+    "POST",
+    "PUT",
+    "DELETE",
+    "OPTIONS",
+  ],
+
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "X-Requested-With",
+  ],
+};
+
+// IMPORTANT:
+// CORS must come BEFORE your API routes.
+app.use(cors(corsOptions));
+
+// Handle preflight requests using the SAME CORS configuration.
+app.options(/.*/, cors(corsOptions));
+
+// --------------------------------------------------
+// Body Parsers
+// --------------------------------------------------
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+
+// --------------------------------------------------
+// Socket.IO
+// --------------------------------------------------
+
+const io = new Server(httpServer, {
+  cors: {
+    origin: allowedOrigins,
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
+});
+
+// --------------------------------------------------
+// Attach Socket.IO to Requests
+// --------------------------------------------------
 
 app.use((req, res, next) => {
   req.io = io;
   next();
 });
 
-import postRoutes from "./routes/postRoutes.js";
-import reportRoutes from "./routes/reportRoutes.js";
+// --------------------------------------------------
+// API Routes
+// --------------------------------------------------
 
 app.use("/api/auth", authRoutes);
+
 app.use("/api/sos", sosRoutes);
+
 app.use("/api/reports", reportRoutes);
+
 app.use("/api/posts", postRoutes);
+
+app.use("/api/overpass", overpassRoutes);
+
+// --------------------------------------------------
+// Basic Routes
+// --------------------------------------------------
 
 app.get("/", (req, res) => {
   res.send("API is running...");
 });
 
 app.get("/health", (req, res) => {
-  res.status(200).json({ status: "healthy", service: "saheli-backend" });
+  res.status(200).json({
+    status: "healthy",
+    service: "saheli-backend",
+  });
 });
 
-// Socket.io connection implementation
+// --------------------------------------------------
+// Socket.IO Connection
+// --------------------------------------------------
+
 io.on("connection", (socket) => {
   console.log("A user connected:", socket.id);
 
   socket.on("join_SOS", (userId) => {
     socket.join(userId);
-    console.log(`User ${userId} joined SOS room`);
+
+    console.log(
+      `User ${userId} joined SOS room`
+    );
   });
 
   socket.on("disconnect", () => {
-    console.log("User disconnected:", socket.id);
+    console.log(
+      "User disconnected:",
+      socket.id
+    );
   });
 });
 
-// const PORT = process.env.PORT_SAHELI || 4000;
-// const PORT = process.env.PORT || 4000;
+// --------------------------------------------------
+// Start Server
+// --------------------------------------------------
+
 const PORT = process.env.PORT_SAHELI || 4000;
 
-httpServer.listen(PORT, () => console.log(`Server started on port ${PORT}`));
+httpServer.listen(PORT, () => {
+  console.log(
+    `🚀 Server started on port ${PORT}`
+  );
+});
